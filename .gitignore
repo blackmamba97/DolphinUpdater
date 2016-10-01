@@ -1,0 +1,7 @@
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/dist
+/*.egg-info
+/dolphin_updater/__pycache__
