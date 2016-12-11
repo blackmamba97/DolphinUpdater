@@ -18,8 +18,8 @@ class Builds(abc.ABC):
     def __init__(self, path):
         self.path = path
         self.table = self.fetch_version_table()
-        self.latest_download = self.get_latest_download()
         self.latest_version = self.get_latest_version()
+        self.latest_download = self.get_latest_download()
         self.installed_version = self.get_installed_version()
 
     @abc.abstractmethod
@@ -55,11 +55,14 @@ class DolphinBuilds(Builds):
         return fetch_html_from_website(url).find("table", attrs={"class": "versions-list"})
 
     def get_latest_version(self):
-        for tr in self.table.findAll("tr", attrs={"class": "infos"}):
-            td = tr.find("td", attrs={"class": "version"})
-            a = td.find("a")
-            if a.get_text() in self.latest_download:
-                return a.get_text()
+        pattern = re.compile("[1-9]\.[0-9]-[0-9]*(?=-x64\.7z)")
+        for tr in self.table.findAll("tr", attrs={"class": "download"}):
+            td = tr.find("td", attrs={"class": "download-links"})
+            a = td.find("a", attrs={"class": "win"})
+            if a:
+                match = pattern.search(a.get("href"))
+                if match:
+                    return match.group()
 
     def print_latest_version(self):
         print("Current master builds:")
@@ -84,7 +87,7 @@ class DolphinBuilds(Builds):
 
     def get_installed_version(self):
         with open(self.path, "rb") as f:
-            match = re.search(b"[4|5]\.0-[0-9]+", f.read())
+            match = re.search(b"[1-9]\.[0-9]-[0-9]+", f.read())
             return match.group().decode("utf-8")
 
 
@@ -94,29 +97,24 @@ class IshiirukaBuilds(Builds):
 
     def fetch_version_table(self):
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
-        table = fetch_html_from_website(url).find("div", attrs={"class": "gallery-view-section"})
-        if not table:
-            print("Failed fetching DropBox links. Trying again ...")
-            return self.fetch_version_table()
-        return table
+        table = fetch_html_from_website(url).find("ol", attrs={"class": "sl-list-body"})
+        return table.decode_contents()
 
     def get_latest_version(self):
-        for file in self.table.findAll("a", attrs={"class": "file-link filename-link"}):
-            version = re.search("[0-9]+(?=\([^)]+\)\.x64\.7z)", file.text)
-            if version:
-                return version.group()
+        versions = re.findall("[0-9]+(?=%28[\S]+%29\.x64\.7z\?dl=0)", self.table)
+        return max(versions)
 
     def print_latest_version(self):
         print("Latest build:\t\t\t", GREEN, self.latest_version, END)
 
     def get_latest_download(self):
-        for file in self.table.findAll("a", attrs={"class": "file-link filename-link"}):
-            if re.search("[0-9]+(?=\([^)]+\)\.x64\.7z)", file.text):
-                return file.get("href")[:-1] + "1"
+        regex = "https://www\.dropbox\.com/sh/[\S]+\.{0}%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
+        match = re.search(regex, self.table)
+        return match.group()[:-1] + "1"
 
     def get_installed_version(self):
         with open(self.path, "rb") as f:
-            match = re.search(b"[0-9]+(?=\([^)]+\)[\x00]+master)", f.read())
+            match = re.search(b"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)", f.read())
             return match.group().decode("utf-8")
 
 
