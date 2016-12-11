@@ -20,7 +20,7 @@ class Builds(abc.ABC):
         self.table = self.fetch_version_table()
         self.latest_version = self.get_latest_version()
         self.latest_download = self.get_latest_download()
-        self.installed_version = self.get_installed_version()
+        self.installed_version = None
 
     @abc.abstractmethod
     def fetch_version_table(self):
@@ -38,9 +38,10 @@ class Builds(abc.ABC):
     def get_latest_download(self):
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def get_installed_version(self):
-        raise NotImplementedError()
+    def get_installed_version(self, pattern):
+        with open(self.path, "rb") as f:
+            match = re.search(pattern, f.read())
+            return match.group().decode("utf-8")
 
     def is_outdated(self):
         return self.latest_version != self.installed_version
@@ -49,6 +50,7 @@ class Builds(abc.ABC):
 class DolphinBuilds(Builds):
     def __init__(self, path):
         super().__init__(path)
+        self.installed_version = self.get_installed_version(b"[1-9]\.[0-9]-[0-9]+")
 
     def fetch_version_table(self):
         url = "https://dolphin-emu.org/download/list/master/1/?nocr=true"
@@ -60,9 +62,7 @@ class DolphinBuilds(Builds):
             td = tr.find("td", attrs={"class": "download-links"})
             a = td.find("a", attrs={"class": "win"})
             if a:
-                match = pattern.search(a.get("href"))
-                if match:
-                    return match.group()
+                return pattern.search(a.get("href")).group()
 
     def print_latest_version(self):
         print("Current master builds:")
@@ -85,15 +85,11 @@ class DolphinBuilds(Builds):
             if a:
                 return a.get("href")
 
-    def get_installed_version(self):
-        with open(self.path, "rb") as f:
-            match = re.search(b"[1-9]\.[0-9]-[0-9]+", f.read())
-            return match.group().decode("utf-8")
-
 
 class IshiirukaBuilds(Builds):
     def __init__(self, path):
         super().__init__(path)
+        self.installed_version = self.get_installed_version(b"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)")
 
     def fetch_version_table(self):
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
@@ -111,11 +107,6 @@ class IshiirukaBuilds(Builds):
         regex = "https://www\.dropbox\.com/sh/[\S]+\.{0}%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
         match = re.search(regex, self.table)
         return match.group()[:-1] + "1"
-
-    def get_installed_version(self):
-        with open(self.path, "rb") as f:
-            match = re.search(b"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)", f.read())
-            return match.group().decode("utf-8")
 
 
 def fetch_html_from_website(url):
