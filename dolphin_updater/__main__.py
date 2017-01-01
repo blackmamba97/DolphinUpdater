@@ -97,14 +97,14 @@ class IshiirukaBuilds(Builds):
         return table.decode_contents()
 
     def get_latest_version(self):
-        versions = re.findall("[0-9]+(?=%28[\S]+%29\.x64\.7z\?dl=0)", self.table)
+        versions = re.findall("[0-9]+(?=%20%28[\S]+%29\.x64\.7z\?dl=0)", self.table)
         return max(versions)
 
     def print_latest_version(self):
         print("Latest build:\t\t\t", GREEN, self.latest_version, END)
 
     def get_latest_download(self):
-        regex = "https://www\.dropbox\.com/sh/[\S]+\.{0}%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
+        regex = "https://www\.dropbox\.com/sh/[\S]+\.{0}%20%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
         match = re.search(regex, self.table)
         return match.group()[:-1] + "1"
 
