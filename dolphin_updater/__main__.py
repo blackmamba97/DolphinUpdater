@@ -50,14 +50,14 @@ class Builds(abc.ABC):
 class DolphinBuilds(Builds):
     def __init__(self, path):
         super().__init__(path)
-        self.installed_version = self.get_installed_version(b"[1-9]\.[0-9]-[0-9]+")
+        self.installed_version = self.get_installed_version(br"[1-9]\.[0-9]-[0-9]+")
 
     def fetch_version_table(self):
         url = "https://dolphin-emu.org/download/list/master/1/?nocr=true"
         return fetch_html_from_website(url).find("table", attrs={"class": "versions-list"})
 
     def get_latest_version(self):
-        pattern = re.compile("[1-9]\.[0-9]-[0-9]*(?=-x64\.7z)")
+        pattern = re.compile(r"[1-9]\.[0-9]-[0-9]*(?=-x64\.7z)")
         for tr in self.table.findAll("tr", attrs={"class": "download"}):
             td = tr.find("td", attrs={"class": "download-links"})
             a = td.find("a", attrs={"class": "win"})
@@ -89,7 +89,7 @@ class DolphinBuilds(Builds):
 class IshiirukaBuilds(Builds):
     def __init__(self, path):
         super().__init__(path)
-        self.installed_version = self.get_installed_version(b"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)")
+        self.installed_version = self.get_installed_version(br"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)")
 
     def fetch_version_table(self):
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
@@ -97,14 +97,14 @@ class IshiirukaBuilds(Builds):
         return table.decode_contents()
 
     def get_latest_version(self):
-        versions = re.findall("[0-9]+(?=%20%28[\S]+%29\.x64\.7z\?dl=0)", self.table)
+        versions = re.findall(r"[0-9]{3,}(?=%28[\S]+%29\.x64\.7z\?dl=0)", self.table)
         return max(versions)
 
     def print_latest_version(self):
         print("Latest build:\t\t\t", GREEN, self.latest_version, END)
 
     def get_latest_download(self):
-        regex = "https://www\.dropbox\.com/sh/[\S]+\.{0}%20%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
+        regex = r"https://www\.dropbox\.com/sh/[\S]+\.{0}%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
         match = re.search(regex, self.table)
         return match.group()[:-1] + "1"
 
