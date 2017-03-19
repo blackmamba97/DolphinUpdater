@@ -4,7 +4,7 @@ setup(
     name='DolphinUpdater',
     version='1.0.0',
     packages=['dolphin_updater'],
-    url='https://github.com/blackmamba97/DolphinUpdater',
+    url='https://github.com/maxroehrl/DolphinUpdater',
     license='MIT',
     author='Max Röhrl',
     author_email='max.roehrl11@gmail.com',
