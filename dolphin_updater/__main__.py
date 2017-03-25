@@ -72,11 +72,11 @@ class DolphinBuilds(Builds):
             time = row.find("td", attrs={"class": "reldate"}).get_text()
             build = "{0:<10} | {1:<20} | {2}".format(version, time, change.split(" (")[0])
             if version == self.installed_version:
-                print(CYAN, '\t', build, END)
+                print(CYAN, "\t", build, END)
             elif version == self.latest_version:
-                print(GREEN, '\t', build, END)
+                print(GREEN, "\t", build, END)
             else:
-                print('\t', build)
+                print("\t", build)
 
     def get_latest_download(self):
         for tr in self.table.findAll("tr", attrs={"class": "download"}):
@@ -133,7 +133,7 @@ def update_dolphin_if_necessary(dolphin_exe_path):
     if builds.is_outdated():
         print("Current version installed:\t", CYAN, builds.installed_version, END)
         builds.print_latest_version()
-        if input("Press Enter to update\n") == '':
+        if not input("Press Enter to update\n"):
             download_and_update(builds)
 
 
@@ -156,7 +156,7 @@ def download(url, file_path):
 
 def download_report_hook(count, block_size, total_size):
     percent = int(count * block_size * 100 / total_size)
-    print("\rDownloading... ", percent, "%", end='', flush=True)
+    print("\rDownloading... ", percent, "%", end="", flush=True)
 
 
 def extract_dolphin_7z(file_name, extracted_folder):
@@ -194,7 +194,7 @@ def main():
         print("Path must end with 'Dolphin.exe'")
         sys.exit(1)
     if not os.path.exists(dolphin_exe_path):
-        print("No Dolphin.exe found at '", dolphin_exe_path, "'", sep='')
+        print("No Dolphin.exe found at '", dolphin_exe_path, "'", sep="")
         sys.exit(1)
     update_dolphin_if_necessary(dolphin_exe_path)
     subprocess.Popen(dolphin_exe_path)
