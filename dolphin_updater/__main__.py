@@ -70,7 +70,7 @@ class DolphinBuilds(Builds):
             version = row.find("td", attrs={"class": "version"}).find("a").get_text()
             change = row.find("td", attrs={"class": "description"}).get_text()
             time = row.find("td", attrs={"class": "reldate"}).get_text()
-            build = "{0:<10} | {1:<20} | {2}".format(version, time, change.split(" (")[0])
+            build = f"{version:<10} | {time:<20} | {change.split(' (')[0]}"
             if version == self.installed_version:
                 print(CYAN, "\t", build, END)
             elif version == self.latest_version:
@@ -104,7 +104,7 @@ class IshiirukaBuilds(Builds):
         print("Latest build:\t\t\t", GREEN, self.latest_version, END)
 
     def get_latest_download(self):
-        regex = r"https://www\.dropbox\.com/sh/[\S]+\.{0}%28[\S]+%29\.x64\.7z\?dl=0".format(self.latest_version)
+        regex = rf"https://www\.dropbox\.com/sh/[\S]+\.{self.latest_version}%28[\S]+%29\.x64\.7z\?dl=0"
         match = re.search(regex, self.table)
         return match.group()[:-1] + "1"
 
@@ -162,7 +162,7 @@ def download_report_hook(count, block_size, total_size):
 def extract_dolphin_7z(file_name, extracted_folder):
     if os.path.exists(extracted_folder):
         shutil.rmtree(extracted_folder)
-    call = '{0} x "{1}" -o"{2}" -aoa'.format(get_resource_path("7zr.exe"), file_name, extracted_folder)
+    call = f'{get_resource_path("7zr.exe")} x "{file_name}" -o"{extracted_folder}" -aoa'
     subprocess.Popen(call, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()
 
 
