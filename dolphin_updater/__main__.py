@@ -93,7 +93,7 @@ class IshiirukaBuilds(Builds):
 
     def fetch_version_table(self):
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
-        table = fetch_html_from_website(url).find("ol", attrs={"class": "sl-list-body"})
+        table = fetch_html_from_website(url).find("ol", attrs={"class": "sl-grid-body"})
         return table.decode_contents()
 
     def get_latest_version(self):
