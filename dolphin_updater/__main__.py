@@ -70,7 +70,7 @@ class DolphinBuilds(Builds):
             version = row.find("td", attrs={"class": "version"}).find("a").get_text()
             change = row.find("td", attrs={"class": "description"}).get_text()
             time = row.find("td", attrs={"class": "reldate"}).get_text()
-            build = f"{version:<10} | {time:<20} | {change.split(' (')[0]}"
+            build = f"{version:<10} | {time:<20} | {change[:change.rfind('(')]}"
             if version == self.installed_version:
                 print(CYAN, "\t", build, END)
             elif version == self.latest_version:
