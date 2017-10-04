@@ -2,6 +2,7 @@ import abc
 import argparse
 import bs4
 import colorama
+import json
 import os
 import re
 import shutil
@@ -17,14 +18,6 @@ GREEN = colorama.Fore.GREEN
 class Builds(abc.ABC):
     def __init__(self, path):
         self.path = path
-        self.table = self.fetch_version_table()
-        self.latest_version = self.get_latest_version()
-        self.latest_download = self.get_latest_download()
-        self.installed_version = None
-
-    @abc.abstractmethod
-    def fetch_version_table(self):
-        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_latest_version(self):
@@ -43,18 +36,24 @@ class Builds(abc.ABC):
             match = re.search(pattern, f.read())
             return match.group().decode("utf-8")
 
-    def is_outdated(self):
-        return self.latest_version != self.installed_version
-
 
 class DolphinBuilds(Builds):
     def __init__(self, path):
         super().__init__(path)
         self.installed_version = self.get_installed_version(br"[1-9]\.[0-9]-[0-9]+")
+        self.table = self.fetch_version_table()
+        if self.table:
+            self.latest_version = self.get_latest_version()
+            self.latest_download = self.get_latest_download()
+        else:
+            print("Error: Failed to get the list of download links from the Dolphin website!")
 
-    def fetch_version_table(self):
+    @staticmethod
+    def fetch_version_table():
         url = "https://dolphin-emu.org/download/list/master/1/?nocr=true"
-        return fetch_html_from_website(url).find("table", attrs={"class": "versions-list"})
+        html = urllib.request.urlopen(url).read()
+        bs = bs4.BeautifulSoup(html, "html.parser")
+        return bs.find("table", attrs={"class": "versions-list"})
 
     def get_latest_version(self):
         pattern = re.compile(r"[1-9]\.[0-9]-[0-9]*(?=-x64\.7z)")
@@ -89,29 +88,40 @@ class DolphinBuilds(Builds):
 class IshiirukaBuilds(Builds):
     def __init__(self, path):
         super().__init__(path)
-        self.installed_version = self.get_installed_version(br"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)")
+        self.installed_version = int(self.get_installed_version(br"[0-9]+(?=[ ]?\([^)]+\)[\x00]+master)"))
+        self.download_links = self.fetch_version_table()
+        if self.download_links:
+            self.latest_version = self.get_latest_version()
+            self.latest_download = self.get_latest_download()
+        else:
+            print("Error: Failed to get the list of download links from Dropbox!")
 
-    def fetch_version_table(self):
+    @staticmethod
+    def fetch_version_table():
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
-        table = fetch_html_from_website(url).find("ol", attrs={"class": "sl-grid-body"})
-        return table.decode_contents()
+        html = urllib.request.urlopen(url).read()
+        pattern = re.compile(br"(?<=\(function \(mod, InitReact\) { InitReact\.mountComponent\(mod, )(.+)(?=\) }\)\()")
+        match = pattern.search(html)
+        if match:
+            file_info = json.loads(match.group())["props"]["contents"]["files"]
+            pattern = re.compile(r"[0-9]{3,}(?=%28[\S]+%29\.x64\.7z\?dl=0)")
+            download_links = {}
+            for file in file_info:
+                link = file["href"]
+                match = pattern.search(link)
+                if match:
+                    version = int(match.group())
+                    download_links[version] = link
+            return download_links
 
     def get_latest_version(self):
-        versions = re.findall(r"[0-9]{3,}(?=%28[\S]+%29\.x64\.7z\?dl=0)", self.table)
-        return max(versions)
+        return max(self.download_links.keys())
 
     def print_latest_version(self):
         print("Latest build:\t\t\t", GREEN, self.latest_version, END)
 
     def get_latest_download(self):
-        regex = rf"https://www\.dropbox\.com/sh/[\S]+\.{self.latest_version}%28[\S]+%29\.x64\.7z\?dl=0"
-        match = re.search(regex, self.table)
-        return match.group()[:-1] + "1"
-
-
-def fetch_html_from_website(url):
-    html = urllib.request.urlopen(url).read()
-    return bs4.BeautifulSoup(html, "html.parser")
+        return self.download_links[self.latest_version]
 
 
 def is_ishiiruka_build(path):
@@ -130,7 +140,7 @@ def update_dolphin_if_necessary(dolphin_exe_path):
         builds = IshiirukaBuilds(dolphin_exe_path)
     else:
         builds = DolphinBuilds(dolphin_exe_path)
-    if builds.is_outdated():
+    if builds.latest_version != builds.installed_version:
         print("Current version installed:\t", CYAN, builds.installed_version, END)
         builds.print_latest_version()
         if not input("Press Enter to update\n"):
