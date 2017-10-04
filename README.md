@@ -13,7 +13,7 @@ DolphinUpdater.exe -p "path_to_dolphin_exe"
 ```
 
 ## Build the executable
-You need Python 3 and pip to compile the code.
+You need Python 3.6 and pip to compile the code.
 
 Download this repository and enter the following commands in the new directory.
 
