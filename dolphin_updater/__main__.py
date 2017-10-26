@@ -111,7 +111,7 @@ class IshiirukaBuilds(Builds):
                 match = pattern.search(link)
                 if match:
                     version = int(match.group())
-                    download_links[version] = link
+                    download_links[version] = link[:-1] + "1"
             return download_links
 
     def get_latest_version(self):
