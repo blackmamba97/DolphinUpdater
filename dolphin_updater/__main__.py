@@ -2,7 +2,6 @@ import abc
 import argparse
 import bs4
 import colorama
-import json
 import os
 import re
 import shutil
@@ -100,19 +99,17 @@ class IshiirukaBuilds(Builds):
     def fetch_version_table():
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
         html = urllib.request.urlopen(url).read()
-        pattern = re.compile(br"(?<=\(function \(mod, InitReact\) { InitReact\.mountComponent\(mod, )(.+)(?=\) }\)\()")
-        match = pattern.search(html)
-        if match:
-            file_info = json.loads(match.group())["props"]["contents"]["files"]
-            pattern = re.compile(r"[0-9]{3,}(?=%28[\S]+%29\.x64\.7z\?dl=0)")
-            download_links = {}
-            for file in file_info:
-                link = file["href"]
-                match = pattern.search(link)
-                if match:
-                    version = int(match.group())
-                    download_links[version] = link[:-1] + "1"
-            return download_links
+        pattern = re.compile(br"(?<=url\": \")https://www\.dropbox\.com/sh/7f78x2czhknfrmr/.{25}/Ishiiruka\."
+                             br"(?:Stable\.)?[0-9]{3,}%28.{9}%29\.x64\.7z\?dl=0")
+        links = pattern.findall(html)
+        download_links = {}
+        pattern = re.compile(br"[0-9]{3,}(?=%28[\S]+%29\.x64\.7z\?dl=0)")
+        for link in links:
+            version = pattern.search(link)
+            if version:
+                version = int(version.group())
+                download_links[version] = link.decode()[:-1] + "1"
+        return download_links
 
     def get_latest_version(self):
         return max(self.download_links.keys())
