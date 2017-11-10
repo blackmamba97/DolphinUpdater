@@ -100,10 +100,10 @@ class IshiirukaBuilds(Builds):
         url = "https://www.dropbox.com/sh/7f78x2czhknfrmr/AADhXhA0b8EIcCyejITS697Ca?dl=0"
         html = urllib.request.urlopen(url).read()
         pattern = re.compile(br"(?<=url\": \")https://www\.dropbox\.com/sh/7f78x2czhknfrmr/.{25}/Ishiiruka\."
-                             br"(?:Stable\.)?[0-9]{3,}%28.{9}%29\.x64\.7z\?dl=0")
+                             br"(?:Stable\.)?[0-9]{3,}%28[\S]{9}%29\.x64\.7z\?dl=0")
         links = pattern.findall(html)
         download_links = {}
-        pattern = re.compile(br"[0-9]{3,}(?=%28[\S]+%29\.x64\.7z\?dl=0)")
+        pattern = re.compile(br"[0-9]{3,}(?=%28[\S]{9}%29\.x64\.7z\?dl=0)")
         for link in links:
             version = pattern.search(link)
             if version:
