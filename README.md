@@ -1,4 +1,5 @@
-# Dolphin Updater
+# Dolphin Updater (outdated)
+This tool was useful until the Dolphin emulator team introduced an auto updater.
 
 A script to update the [Dolphin emulator](https://github.com/dolphin-emu/dolphin) with ease in Windows.
 
